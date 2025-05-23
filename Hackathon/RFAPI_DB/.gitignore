@@ -1,0 +1,28 @@
+# Python specific ignores for Face Recognition API
+__pycache__/
+*.py[cod]
+*.so
+.env
+.DS_Store
+
+# Virtual Environment
+env/
+venv/
+ENV/
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# Face images and datasets
+*.jpg
+*.jpeg
+*.png
+
+# Face encodings and models
+*.pkl
+*.npz
+encodings.pickle
+
+# Log files
+*.log

@@ -1,0 +1,115 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+ENV/
+env/
+
+# Flask
+instance/
+.webassets-cache
+
+# React/Node
+node_modules/
+/Plateform/frontend/node_modules/
+/Plateform/frontend/.pnp
+/Plateform/frontend/.pnp.js
+/Plateform/frontend/coverage
+/Plateform/frontend/.DS_Store
+/Plateform/frontend/.env.local
+/Plateform/frontend/.env.development.local
+/Plateform/frontend/.env.test.local
+/Plateform/frontend/.env.production.local
+/Plateform/frontend/npm-debug.log*
+/Plateform/frontend/yarn-debug.log*
+/Plateform/frontend/yarn-error.log*
+/Plateform/frontend/.idea
+/Plateform/frontend/.vscode
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ML Models and datasets (might be large files)
+*.h5
+*.hdf5
+*.pkl
+*.model
+/ObjectDetectionAPI/*.tflite
+
+# Logs and monitoring
+*.log
+logs/
+log/
+
+# Compiled output
+/Plateform/frontend/dist
+/Plateform/frontend/tmp
+/Plateform/frontend/out-tsc
+/Plateform/frontend/bazel-out
+
+# Misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+/.angular
+
+# Cache files
+*.cache
+*.bak

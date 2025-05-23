@@ -1,0 +1,28 @@
+# Python specific ignores for Barcode Reader
+__pycache__/
+*.py[cod]
+*.so
+.env
+.DS_Store
+
+# Virtual Environment
+env/
+venv/
+ENV/
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# Scanned images and temporary files
+uploads/
+temp/
+*.jpg
+*.jpeg
+*.png
+*.pdf
+*.bmp
+*.tiff
+
+# Log files
+*.log

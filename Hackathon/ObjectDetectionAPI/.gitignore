@@ -1,0 +1,34 @@
+# Python specific ignores for Object Detection API
+__pycache__/
+*.py[cod]
+*.so
+.env
+.DS_Store
+
+# Virtual Environment
+env/
+venv/
+ENV/
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# TensorFlow Lite models - Depending on size these could be gitignored
+# Comment line below if you want to include models in git
+*.tflite
+
+# Images and datasets
+*.jpg
+*.jpeg
+*.png
+*.mp4
+*.webm
+*.avi
+
+# Log files
+*.log
+
+# Student database images - these might be for testing
+# Comment the line below if you want to include test images
+students_database/

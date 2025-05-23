@@ -1,0 +1,24 @@
+# Python specific ignores for AI detector API
+__pycache__/
+*.py[cod]
+*.so
+.env
+.DS_Store
+
+# Virtual Environment
+env/
+venv/
+ENV/
+
+# Model files - Depending on size these could be gitignored
+# Comment line below if you want to include models in git
+*.pkl
+*.h5
+*.hdf5
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# Log files
+*.log

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Face Recognition Streaming</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  </head>
+  <body>
+    <h2>Live Camera Stream</h2>
+    <video id="video" autoplay width="400" height="300"></video>
+    <canvas id="canvas" width="400" height="300"
+      style="display: none;"></canvas>
+
+    <h3>Detected Frame:</h3>
+    <img id="output" width="400" height="300" />
+    <h3>Detected Person:</h3>
+    <ul id="namesList"></ul>
+    <h3>Exam Monitoring:</h3>
+    <div id="cheatingStatus"
+      style="margin: 10px 0; font-weight: bold; font-size: 1.2em;"></div>
+    <div id="lookingAtScreen" style="margin: 10px 0; font-weight: bold;"></div>
+    <div id="eyeTrackingInfo" style="margin: 10px 0;"></div>
+    <canvas id="eyeVisualizer" width="400" height="300"
+      style="border: 1px solid #ccc;"></canvas>
+
+    <h3>Monitoring Log:</h3>
+    <div id="monitoringLog"
+      style="margin: 10px 0; height: 100px; overflow-y: auto; border: 1px solid #eee; padding: 5px;"></div>
+
+    <script>    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const output = document.getElementById("output");
+    const namesList = document.getElementById("namesList");
+    const eyeVisualizer = document.getElementById("eyeVisualizer");
+    const eyeCtx = eyeVisualizer.getContext("2d");
+    const eyeTrackingInfo = document.getElementById("eyeTrackingInfo");
+    const lookingAtScreen = document.getElementById("lookingAtScreen");
+    const cheatingStatus = document.getElementById("cheatingStatus");
+    const monitoringLog = document.getElementById("monitoringLog");
+    const ctx = canvas.getContext("2d");
+    const socket = io("http://localhost:5000");
+
+    // Start webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((err) => console.error("Webcam error:", err));    // Send frame every 500ms with reduced quality
+    setInterval(() => {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = canvas.toDataURL("image/jpeg", 0.7); // Reduced quality (0.7)
+      socket.emit("frame", { image: frame });
+    }, 500); // Increased interval    // Receive processed frame
+    socket.on("response", data => {
+      output.src = data.image;
+
+      // Update detected names list
+      namesList.innerHTML = ""; // Clear old names
+      if (data.names && data.names.length > 0) {
+        data.names.forEach(name => {
+          const li = document.createElement("li");
+          li.textContent = name;
+          namesList.appendChild(li);
+        });
+      } else {
+        const li = document.createElement("li");
+        li.textContent = "No face detected";
+        namesList.appendChild(li);
+      }
+      
+      // Update cheating status (always shown)
+      if (data.is_cheating === true) {
+        cheatingStatus.textContent = "⚠️ CHEATING DETECTED ⚠️";
+        cheatingStatus.style.color = "red";
+        cheatingStatus.style.backgroundColor = "#ffeeee";
+        cheatingStatus.style.padding = "5px";
+        
+        // Add to monitoring log
+        if (data.detailed_check) {
+          const logEntry = document.createElement("div");
+          logEntry.textContent = `${new Date().toLocaleTimeString()}: Cheating detected - Not looking at screen`;
+          logEntry.style.color = "red";
+          monitoringLog.appendChild(logEntry);
+          // Scroll to bottom
+          monitoringLog.scrollTop = monitoringLog.scrollHeight;
+        }
+      } else {
+        cheatingStatus.textContent = "Status: Normal";
+        cheatingStatus.style.color = "green";
+        cheatingStatus.style.backgroundColor = "";
+        cheatingStatus.style.padding = "";
+      }
+      
+      // Only update eye tracking visualization on detailed checks
+      if (data.detailed_check) {
+        // Update eye tracking visualization
+        eyeCtx.clearRect(0, 0, eyeVisualizer.width, eyeVisualizer.height);
+        
+        // Draw a representation of the face in the canvas
+        eyeCtx.beginPath();
+        eyeCtx.arc(eyeVisualizer.width / 2, eyeVisualizer.height / 2, 100, 0, 2 * Math.PI);
+        eyeCtx.strokeStyle = '#888';
+        eyeCtx.stroke();
+        
+        // Update eye tracking information
+        if (data.eye_positions && data.eye_positions.length > 0) {
+          eyeTrackingInfo.textContent = `Found ${data.eye_positions.length} eye(s)`;
+          
+          // Update looking at screen status
+          if (data.looking_at_screen === true) {
+            lookingAtScreen.textContent = "Looking at screen: YES";
+            lookingAtScreen.style.color = "green";
+          } else {
+            lookingAtScreen.textContent = "Looking at screen: NO";
+            lookingAtScreen.style.color = "red";
+            
+            // Add potential cheating warning to log
+            const logEntry = document.createElement("div");
+            logEntry.textContent = `${new Date().toLocaleTimeString()}: Warning - Not looking at screen`;
+            logEntry.style.color = "orange";
+            monitoringLog.appendChild(logEntry);
+            // Scroll to bottom
+            monitoringLog.scrollTop = monitoringLog.scrollHeight;
+          }
+          
+          // Plot eye positions on the eye visualizer
+          data.eye_positions.forEach((eye, index) => {
+            // Calculate normalized position on visualizer
+            const normX = (eye.x / output.width) * eyeVisualizer.width;
+            const normY = (eye.y / output.height) * eyeVisualizer.height;
+            
+            // Draw eye position
+            eyeCtx.beginPath();
+            eyeCtx.arc(normX, normY, 10, 0, 2 * Math.PI);
+            eyeCtx.fillStyle = index % 2 === 0 ? 'blue' : 'green'; // Different colors for left/right
+            eyeCtx.fill();
+            
+            // Label
+            eyeCtx.fillStyle = 'white';
+            eyeCtx.fillText(`Eye ${index + 1}`, normX + 15, normY + 5);
+          });
+        } else {
+          eyeTrackingInfo.textContent = "No eyes detected";
+        }
+      }
+    });
+  </script>
+  </body>
+</html>

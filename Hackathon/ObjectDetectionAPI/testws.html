@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Object Detection Streaming</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .stream-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    .stream-box {
+      width: 48%;
+    }
+    .controls {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button:disabled {
+      background-color: #cccccc;
+    }
+    .checkbox-item {
+      margin: 10px 0;
+    }
+    #detectedObjects {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      margin-top: 10px;
+    }
+  </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Simple Object Detection</h1>
+
+      <div class="controls">
+        <h3>Detection Settings</h3>
+        <div class="checkbox-item">
+          <input type="checkbox" id="excludePerson" checked>
+          <label for="excludePerson">Exclude Person</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="excludeCar">
+          <label for="excludeCar"></label>
+        </div>
+        <button id="startBtn">Start Camera</button>
+        <button id="stopBtn" disabled>Stop Camera</button>
+        <button id="updateConfig">Update Filters</button>
+      </div>
+
+      <div class="stream-container">
+        <div class="stream-box">
+          <h3>Camera Input</h3>
+          <video id="video" autoplay width="380" height="285"></video>
+          <canvas id="canvas" width="380" height="285"
+            style="display: none;"></canvas>
+        </div>
+        <div class="stream-box">
+          <h3>Detected Objects</h3>
+          <img id="output" width="380" height="285" />
+        </div>
+      </div>
+
+      <div id="detectedObjects">
+        <p>Waiting for detection results...</p>
+      </div>
+    </div>
+
+    <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const output = document.getElementById("output");
+    const ctx = canvas.getContext("2d");
+    const socket = io("http://localhost:5000");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const updateConfigBtn = document.getElementById("updateConfig");
+    const excludePersonCheckbox = document.getElementById("excludePerson");
+    const excludeCarCheckbox = document.getElementById("excludeCar");
+    const detectedObjectsDiv = document.getElementById("detectedObjects");
+    
+    let stream;
+    let intervalId;
+
+    // Connect and update initial config
+    socket.on("connect", () => {
+      console.log("Connected to server");
+      updateExcludeConfig();
+    });
+
+    // Start webcam
+    startBtn.addEventListener("click", async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        
+        // Start sending frames
+        intervalId = setInterval(() => {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const frame = canvas.toDataURL("image/jpeg");
+          socket.emit("frame", { image: frame });
+        }, 200);
+      } catch (err) {
+        console.error("Webcam error:", err);
+        alert("Could not access camera!");
+      }
+    });
+
+    // Stop webcam
+    stopBtn.addEventListener("click", () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.srcObject = null;
+      output.src = '';
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      detectedObjectsDiv.innerHTML = '<p>Waiting for detection results...</p>';
+    });
+
+    // Update exclude config
+    function updateExcludeConfig() {
+      const excludeCategories = [];
+      
+      if (excludePersonCheckbox.checked) {
+        excludeCategories.push("person");
+      }
+      
+      if (excludeCarCheckbox.checked) {
+        excludeCategories.push("car");
+      }
+      
+      socket.emit("config", {
+        exclude_categories: excludeCategories
+      });
+      
+      console.log("Updated exclude categories:", excludeCategories);
+    }
+
+    updateConfigBtn.addEventListener("click", updateExcludeConfig);
+    
+    // Receive processed frame
+    socket.on("response", data => {
+      output.src = data.image; // base64 image with detected objects
+      
+      // Update excluded categories and detected objects info
+      const excluded = data.excluded || [];
+      const detected = data.detected || [];
+      
+      let html = `<p>Excluded categories: ${excluded.length > 0 ? excluded.join(', ') : 'None'}</p>`;
+      
+      if (detected.length > 0) {
+        html += '<h4>Detected Objects:</h4><ul>';
+        detected.forEach(obj => {
+          html += `<li>${obj.category} (confidence: ${(obj.score * 100).toFixed(1)}%)</li>`;
+        });
+        html += '</ul>';
+      } else {
+        html += '<p>No objects detected</p>';
+      }
+      
+      detectedObjectsDiv.innerHTML = html;
+    });
+  </script>
+  </body>
+</html>

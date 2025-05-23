@@ -1,0 +1,23 @@
+# Python specific ignores for AcademGuard backend
+__pycache__/
+*.py[cod]
+*.so
+.env
+.DS_Store
+
+# Virtual Environment
+env/
+venv/
+ENV/
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
